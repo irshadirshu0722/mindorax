@@ -48,11 +48,11 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'apps.middleware.JWTMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.middleware.JWTMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -154,4 +154,4 @@ JWT_REFRESH_EXPIRE_DAYS = 7
 JWT_ALGORITHM = 'HS256'
 
 # GOOGLE
-GOOGLE_CLIENT_ID = ""
+GOOGLE_CLIENT_ID = "304837663230-1ehr5sn46t7fj682o95goqim810111kr.apps.googleusercontent.com"

@@ -1,5 +1,6 @@
 from django.db import models
 from apps.utils import CreateUpdateAt
+from apps.users.models import User
 # Create your models here.
 
 
@@ -15,6 +16,7 @@ class Subject(CreateUpdateAt):
     ('completed','Completed'),
     ('archived','Archived')
   ]
+  user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='subjects')
   title = models.CharField(max_length=200)
   description = models.TextField()
   goal = models.TextField()

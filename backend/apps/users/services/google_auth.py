@@ -31,10 +31,9 @@ class GoogleAuthService:
     Service for making decision either login or register
     """
     google_data = GoogleAuthService.verify_google_token(token)
-    
-    user = UserRepository.get_by_email(google_data.get('email'))
-
-    if not user:
+    try:
+      user = UserRepository.get_by_email(google_data.get('email'))
+    except User.DoesNotExist:
       user = UserRepository.create_user(
         **google_data
       )

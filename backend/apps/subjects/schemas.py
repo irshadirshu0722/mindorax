@@ -1,34 +1,47 @@
-from ninja import Schema
+from ninja import Schema,ModelSchema
 from datetime import datetime
 from enum import Enum
-
+from .models import Subject
 class DifficultyLevel(str, Enum):
     low = "low"
     medium = "medium"
     high = "high"
-
 
 class Status(str, Enum):
     active = "active"
     completed = "completed"
     archived = "archived"
 
-class BaseSubject(Schema):
-  id : int
-  title : str
-  description : str
-  goal : str
-  deadline : datetime
-  difficulty_level : DifficultyLevel
-  status : Status
-  updated_at : datetime
-  created_at : datetime
+class SubjectExtractResponse(Schema):
+    id: int
+    raw_text: str
+    processed_summary: str
+    extracted_topics: dict
+    created_at: datetime
+    updated_at: datetime
 
-class SubjectCreate(BaseSubject):
-  updated_at: None | datetime = None
-  created_at: None |datetime = None
-  id : None | datetime =  None
+class SubjectFileResponse(Schema):
+    id: int
+    file: str
+    file_type: str
+    created_at: datetime
+    updated_at: datetime
+    subject_extract: SubjectExtractResponse | None
 
 
-class SubjectResponse(BaseSubject):
-  pass
+
+class SubjectCreate(ModelSchema):
+    class Meta:
+        model = Subject
+        fields = [
+            'title','description','goal','deadline','difficulty_level','status'
+        ]
+
+
+class SubjectResponse(ModelSchema):
+    files: list[SubjectFileResponse] = []
+    class Meta:
+        model = Subject
+        fields = [
+            'title','description','goal','deadline','difficulty_level','status'
+        ]

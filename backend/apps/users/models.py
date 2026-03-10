@@ -3,17 +3,7 @@ from django.contrib.auth.models import AbstractUser,BaseUserManager
 from ..utils import CreateUpdateAt
 # Create your models here.
 
-class User(AbstractUser,CreateUpdateAt):
-  username = None
-  email = models.EmailField(unique=True)
-  password = models.CharField(blank=True,null=True)
-  oauth_provider = models.CharField(max_length=30)
-  oauth_id = models.CharField(max_length=244)
-  USERNAME_FIELD = "email"
-  REQUIRED_FIELDS = []
 
-  def __str__(self):
-    return self.email
 
 class UserManager(BaseUserManager):
   def create_user(self,email,password=None,**extra_fields):
@@ -30,3 +20,15 @@ class UserManager(BaseUserManager):
     extra_fields.setdefault('is_staff',True)
     extra_fields.setdefault('is_superuser',True)
     return self.create_user(email,password,**extra_fields)
+  
+class User(AbstractUser,CreateUpdateAt):
+  username = None
+  email = models.EmailField(unique=True)
+  password = models.CharField(blank=True,null=True)
+  oauth_provider = models.CharField(max_length=30)
+  oauth_id = models.CharField(max_length=244)
+  USERNAME_FIELD = "email"
+  REQUIRED_FIELDS = []
+  objects = UserManager()
+  def __str__(self):
+    return self.email

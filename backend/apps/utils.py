@@ -13,23 +13,20 @@ class CreateUpdateAt(models.Model):
 
 
 class BaseRepository:
+    
     def __init__(self, model):
         self.model = model
-    @staticmethod
     def create(self, **data):
         return self.model.objects.create(**data)
-    @staticmethod
     def get(self, **filters):
         return self.model.objects.get(**filters)
-    @staticmethod
+    
     def filter(self, **filters):
         return self.model.objects.filter(**filters)
-    @staticmethod
     def update(self, instance, **data):
         for key, value in data.items():
             setattr(instance, key, value)
         instance.save()
         return instance
-    @staticmethod
     def delete(self, instance):
         instance.delete()

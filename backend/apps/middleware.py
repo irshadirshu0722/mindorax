@@ -20,9 +20,10 @@ class JWTMiddleware(MiddlewareMixin):
     payload = TokenService.verify_token(token)
     if not payload:
       request.user = AnonymousUser()
-
+    print(payload)
     try:
       user = User.objects.get(id=payload['user_id'])
       request.user = user
+      print("user Assigned",user)
     except:
       request.user = AnonymousUser()
