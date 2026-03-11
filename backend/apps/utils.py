@@ -1,5 +1,5 @@
 from django.db import models
-
+from ninja.errors import HttpError
 class CreateUpdateAt(models.Model):
   """
   Reusable create and update field for every models
@@ -30,3 +30,7 @@ class BaseRepository:
         return instance
     def delete(self, instance):
         instance.delete()
+    def get_with_is_author(self,user,**filter):
+        instance = self.get(**filter)
+        if instance.user != user:
+            raise HttpError(status_code=403,message="You are not allowed to view this subject")

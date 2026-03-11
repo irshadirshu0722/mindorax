@@ -1,7 +1,7 @@
 from ninja import Schema,ModelSchema
 from datetime import datetime
 from enum import Enum
-from .models import Subject
+from .models import Subject,SubjectFile
 class DifficultyLevel(str, Enum):
     low = "low"
     medium = "medium"
@@ -20,13 +20,18 @@ class SubjectExtractResponse(Schema):
     created_at: datetime
     updated_at: datetime
 
-class SubjectFileResponse(Schema):
-    id: int
-    file: str
-    file_type: str
-    created_at: datetime
-    updated_at: datetime
-    subject_extract: SubjectExtractResponse | None
+class SubjectFileResponse(ModelSchema):
+    full_url: str | None = None
+
+    class Meta:
+        model = SubjectFile
+        fields = '__all__'
+    @staticmethod
+    def resolve_full_url(obj, context):
+        if not obj.file:
+            return None
+        request = context["request"]
+        return request.build_absolute_uri(obj.file.url)
 
 
 
@@ -45,3 +50,11 @@ class SubjectResponse(ModelSchema):
         fields = [
             'title','description','goal','deadline','difficulty_level','status'
         ]
+
+
+class SubjectFileCreate(ModelSchema):
+
+    class Meta:
+        model = SubjectFile
+        fields = ['title','description']
+        

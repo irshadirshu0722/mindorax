@@ -155,3 +155,7 @@ JWT_ALGORITHM = 'HS256'
 
 # GOOGLE
 GOOGLE_CLIENT_ID = "304837663230-1ehr5sn46t7fj682o95goqim810111kr.apps.googleusercontent.com"
+
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

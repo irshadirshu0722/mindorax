@@ -25,3 +25,6 @@ class SubjectService:
   def update_subject(self,user,subject_id,data):
     subject = self.get_subject_with_is_author(user,subject_id)
     return SubjectRepository().update(subject,**data)
+  
+  def analyse_subject(self,user,subject_id):
+    pass

@@ -30,10 +30,13 @@ class SubjectFile(CreateUpdateAt):
     ('pdf','PDF'),
     ('txt','Text Document')
   ]
-  subject_id = models.ForeignKey(Subject,on_delete=models.CASCADE,related_name='files')
+  subject = models.ForeignKey(Subject,on_delete=models.CASCADE,related_name='files')
   file = models.FileField(upload_to="subjects/")
   file_type = models.CharField(choices=FILE_TYPE,default='pdf')
+  title = models.CharField(max_length=1024)
+  description = models.TextField()
 
+  
 class SubjectExtract(CreateUpdateAt):
   subject_file = models.OneToOneField(SubjectFile,on_delete=models.CASCADE,related_name='subject_extract')
   raw_text = models.TextField()

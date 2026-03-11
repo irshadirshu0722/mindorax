@@ -1,2 +1,2 @@
-from .subject_file_service import *
-from .subject_service import *
+from .subject_file_service import SubjectFileService
+from .subject_service import SubjectService
