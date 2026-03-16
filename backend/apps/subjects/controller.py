@@ -1,6 +1,6 @@
 from ninja import Router,File,Path,Form
 from ninja.files import UploadedFile
-from .schemas import SubjectCreate,SubjectExtractResponse,SubjectFileCreate,SubjectFileResponse,SubjectResponse
+from .schemas import SubjectCreate,SubjectAnalyzeResponse,SubjectFileCreate,SubjectFileResponse,SubjectResponse
 from .services import SubjectService,SubjectFileService
 from apps.permissions import IsAuthenticated
 
@@ -47,4 +47,5 @@ def delete_subject_file(request,file_id:Path[int]):
 # Analyse 
 @router.post('/analyse/{subject_id}')
 def analyse(request,subject_id:int):
-  SubjectService().
+  SubjectService().analyse_subject(request.user,subject_id)
+  return {"message":"Subject start analyzing. You are in Free Mode So It takes time please come later"}

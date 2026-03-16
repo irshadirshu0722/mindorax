@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "apps.subjects",
     "apps.planning",
     "apps.quizzes",
+    "apps.logs",
 
     "corsheaders",
 ]
@@ -148,7 +149,7 @@ AUTH_USER_MODEL = "users.User"
 
 # JWT
 JWT_SECRET = SECRET_KEY
-JWT_ACCESS_EXPIRE_MINUTES = 30
+JWT_ACCESS_EXPIRE_MINUTES = 5000000
 JWT_REFRESH_EXPIRE_DAYS = 7
 
 JWT_ALGORITHM = 'HS256'
@@ -159,3 +160,7 @@ GOOGLE_CLIENT_ID = "304837663230-1ehr5sn46t7fj682o95goqim810111kr.apps.googleuse
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+
+# GEMINI Modal
+GEMINI_API_KEY="AIzaSyC3eQgtfDc6RILlmW6mrQZmWab7RdsGNWg"

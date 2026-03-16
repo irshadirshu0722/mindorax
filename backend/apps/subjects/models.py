@@ -1,16 +1,12 @@
 from django.db import models
-from apps.utils import CreateUpdateAt
+from apps.utils import CreateUpdateAt,DIFFICULTY_LEVEL_CHOICES
 from apps.users.models import User
 # Create your models here.
 
 
 
 class Subject(CreateUpdateAt):
-  DIFFICULTY_LEVEL_CHOICES = [
-    ('low','LOW'),
-    ('medium','Medium'),
-    ('high','High')
-  ]
+  
   STATUS_CHOICES = [
     ('active','Active'),
     ('completed','Completed'),
@@ -21,7 +17,8 @@ class Subject(CreateUpdateAt):
   description = models.TextField()
   goal = models.TextField()
   deadline = models.DateField()
-  difficulty_level = models.CharField(choices=DIFFICULTY_LEVEL_CHOICES,default='low')
+  is_analyzing = models.BooleanField(default=False)
+  is_failed_analyze =  models.BooleanField(default=False)
   status =  models.CharField(choices=STATUS_CHOICES,default='active')
 
 
@@ -37,8 +34,14 @@ class SubjectFile(CreateUpdateAt):
   description = models.TextField()
 
   
-class SubjectExtract(CreateUpdateAt):
-  subject_file = models.OneToOneField(SubjectFile,on_delete=models.CASCADE,related_name='subject_extract')
-  raw_text = models.TextField()
-  processed_summary = models.TextField()
-  extracted_topics = models.JSONField()
+class SubjectAnalyze(CreateUpdateAt):
+  subject = models.OneToOneField(Subject,on_delete=models.CASCADE,related_name='subject_analyze')
+  difficulty_level = models.CharField(choices=DIFFICULTY_LEVEL_CHOICES,default='low')
+  summary = models.TextField()
+  topics = models.JSONField()
+  subtopics = models.JSONField()
+  concepts = models.JSONField()
+  topic_wise_priority = models.JSONField(null=True)
+  key_points = models.JSONField()
+  recommended_focus = models.JSONField()
+  estimated_hours = models.IntegerField()

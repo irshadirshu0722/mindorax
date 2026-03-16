@@ -1,7 +1,7 @@
 from ninja import Schema,ModelSchema
 from datetime import datetime
 from enum import Enum
-from .models import Subject,SubjectFile
+from .models import Subject,SubjectFile,SubjectAnalyze
 class DifficultyLevel(str, Enum):
     low = "low"
     medium = "medium"
@@ -12,13 +12,10 @@ class Status(str, Enum):
     completed = "completed"
     archived = "archived"
 
-class SubjectExtractResponse(Schema):
-    id: int
-    raw_text: str
-    processed_summary: str
-    extracted_topics: dict
-    created_at: datetime
-    updated_at: datetime
+class SubjectAnalyzeResponse(ModelSchema):
+    class Meta:
+        model = SubjectAnalyze
+        fields = '__all__'
 
 class SubjectFileResponse(ModelSchema):
     full_url: str | None = None
@@ -39,16 +36,17 @@ class SubjectCreate(ModelSchema):
     class Meta:
         model = Subject
         fields = [
-            'title','description','goal','deadline','difficulty_level','status'
+            'title','description','goal','deadline','status'
         ]
 
 
 class SubjectResponse(ModelSchema):
     files: list[SubjectFileResponse] = []
+    subject_analyze: SubjectAnalyzeResponse | None = None
     class Meta:
         model = Subject
         fields = [
-            'title','description','goal','deadline','difficulty_level','status'
+            'title','description','goal','deadline','status'
         ]
 
 

@@ -16,6 +16,7 @@ class BaseRepository:
     
     def __init__(self, model):
         self.model = model
+    
     def create(self, **data):
         return self.model.objects.create(**data)
     def get(self, **filters):
@@ -33,4 +34,11 @@ class BaseRepository:
     def get_with_is_author(self,user,**filter):
         instance = self.get(**filter)
         if instance.user != user:
-            raise HttpError(status_code=403,message="You are not allowed to view this subject")
+            raise HttpError(status_code=403,message="You are not allowed to view this item")
+        return instance
+
+DIFFICULTY_LEVEL_CHOICES = [
+    ('low','LOW'),
+    ('medium','Medium'),
+    ('high','High')
+  ]
