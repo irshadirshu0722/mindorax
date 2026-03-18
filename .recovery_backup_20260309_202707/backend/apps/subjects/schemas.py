@@ -19,7 +19,6 @@ class BaseSubject(Schema):
   description : str
   goal : str
   deadline : datetime
-  difficulty_level : DifficultyLevel
   status : Status
   updated_at : datetime
   created_at : datetime

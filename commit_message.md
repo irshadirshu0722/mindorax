@@ -10,3 +10,7 @@
 | perf     | performance improvements                   |
 | build    | build system changes                       |
 | ci       | CI/CD changes                              |
+
+
+
+python -m celery -A core worker -P gevent -c 1000 -l INFO
