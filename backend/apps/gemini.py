@@ -23,6 +23,107 @@ class GeminiAPIService:
         response = self.model.generate_content(contents)
         return self._extract_text(response)
 
+    def run_study_plan_create(self,subject,study_plan_instance):
+        subject_files = list(subject.files.all())
+        previous_quizzes = list(
+            subject.quizzes.prefetch_related(
+                "questions__options",
+                "attempts__answers__question",
+                "attempts__answers__selected_option",
+            ).order_by("created_at")
+        )
+
+        prompt = self.study_plan_create_prompt(
+            subject=subject,
+            study_plan_instance=study_plan_instance,
+            previous_quizzes=previous_quizzes,
+            subject_files=subject_files,
+        )
+
+        return self.request_gemini([prompt])
+
+    def study_plan_create_prompt(
+        self,
+        subject,
+        study_plan_instance,
+        previous_quizzes: Iterable[Any] | None = None,
+        subject_files: Iterable[Any] | None = None,
+    ) -> str:
+        context = {
+            "subject": self._build_subject_context(subject),
+            "subject_analysis": self._build_subject_analysis_context(subject),
+            "attached_files": self._build_subject_files_context(subject_files),
+            "requested_study_plan": self._build_study_plan_request_context(
+                study_plan_instance
+            ),
+            "quiz_history_summary": self._build_previous_quiz_summary(previous_quizzes),
+            "quiz_history": self._build_previous_quizzes_context(previous_quizzes),
+        }
+
+        requested_topics = self._normalize_topics(
+            getattr(study_plan_instance, "topics", [])
+        )
+        topic_instruction = (
+            ", ".join(requested_topics)
+            if requested_topics
+            else "derive the strongest study topics from the subject analysis"
+        )
+
+        return f"""
+            You are an expert academic planner inside an AI study planner.
+            Create a realistic, detailed study plan that helps the learner finish the subject on time and focus on the right material.
+
+            Use the JSON context below as the complete source of truth.
+            The `attached_files` block contains file metadata only, not the raw file contents.
+            The `quiz_history_summary` and `quiz_history` blocks must influence how you prioritize and schedule the plan.
+
+            CONTEXT:
+            {json.dumps(context, indent=2, ensure_ascii=True, default=str)}
+
+            Return ONLY valid JSON with this exact structure:
+            {{
+              "starting_date": "YYYY-MM-DD",
+              "end_date": "YYYY-MM-DD",
+              "total_hours": number,
+              "daily_study_hours": number,
+              "topics": ["topic 1", "topic 2"],
+              "description": "overall plan strategy and what the learner should achieve",
+              "plan_items": [
+                {{
+                  "topic": "topic name",
+                  "description": "specific study task, coverage, and expected learning outcome",
+                  "estimated_hours": number,
+                  "starting_date_time": "YYYY-MM-DDTHH:MM:SS",
+                  "end_date_time": "YYYY-MM-DDTHH:MM:SS"
+                }}
+              ]
+            }}
+
+            Rules:
+            - Keep the study plan aligned with the requested topics: {topic_instruction}.
+            - Use subject details and subject analysis as the primary academic source of truth.
+            - Use attached_files only as metadata context from title, description, and file_type. Do not claim to have read the full contents of any file.
+            - Respect the requested starting_date, end_date, total_hours, and daily_study_hours from the context.
+            - The sum of all plan_items estimated_hours must equal total_hours.
+            - Do not schedule more than daily_study_hours across any single calendar day.
+            - Every plan_item must stay fully inside the study plan date range.
+            - Plan items must be in chronological order.
+            - Break the work into manageable sessions and cover all major required topics.
+            - Prioritize foundational topics before advanced topics.
+            - Use high-priority topics, recommended_focus, and weak quiz areas for earlier or longer study blocks.
+            - If quiz history shows repeated mistakes or weak accuracy in a topic, allocate more time, more revision, or an earlier revisit to that topic.
+            - Include revision or consolidation sessions before the deadline when appropriate.
+            - Reuse topic names that already exist in the context whenever possible.
+            - If requested topics are empty, infer the topics from the subject, subject analysis, and goal.
+            - Keep description fields concrete, actionable, and educational.
+            - starting_date and end_date must be valid dates in YYYY-MM-DD format.
+            - starting_date_time and end_date_time must be valid ISO 8601 datetimes.
+            - total_hours, daily_study_hours, and estimated_hours must be positive integers.
+            - topics must be a deduplicated list of the main topics covered by the plan.
+            - plan_items must be detailed enough for the learner to understand exactly what to study in each session.
+            - Do not include markdown, commentary, or any text outside the JSON object.
+            """
+
     def run_analyze_subject(self, subject, subject_files: Iterable[Any] | None = None):
 
         prompt = self.subject_analyze_prompt(subject)
@@ -288,6 +389,25 @@ class GeminiAPIService:
             )
 
         return file_context
+
+    def _build_study_plan_request_context(
+        self, study_plan_instance
+    ) -> dict[str, Any]:
+        return {
+            "id": getattr(study_plan_instance, "id", None),
+            "topics": self._normalize_topics(getattr(study_plan_instance, "topics", [])),
+            "description": getattr(study_plan_instance, "description", ""),
+            "starting_date": str(
+                getattr(study_plan_instance, "starting_date", "") or ""
+            ),
+            "end_date": str(getattr(study_plan_instance, "end_date", "") or ""),
+            "total_hours": getattr(study_plan_instance, "total_hours", None),
+            "daily_study_hours": getattr(
+                study_plan_instance, "daily_study_hours", None
+            ),
+            "ai_generated": getattr(study_plan_instance, "ai_generated", None),
+            "is_completed": getattr(study_plan_instance, "is_completed", None),
+        }
 
     def _build_quiz_request_context(self, quiz) -> dict[str, Any]:
         return {

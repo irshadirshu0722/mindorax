@@ -117,7 +117,6 @@ Example plan_json:
 }
 📅 PLAN ITEMS
 
-Your PlanItems table is good.
 
 plan_items
 -----------
@@ -150,7 +149,6 @@ created_at
 Indexes:
 
 INDEX(user_id)
-INDEX(subject_id)
 
 Used for analytics.
 

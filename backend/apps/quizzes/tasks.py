@@ -1,8 +1,8 @@
 from celery import shared_task
-from celery.utils.log import get_task_logger
 from kombu.exceptions import OperationalError
 from apps.gemini import GeminiAPIService
 from apps.logs.services import FailedTaskService
+from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
 MAX_RETRIES = 5
