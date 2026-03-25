@@ -2,12 +2,13 @@
 from apps.planning.repository import StudySessionRepo,PlanItemRepo,StudyPlanRepo
 from apps.subjects.services import SubjectService
 from ninja.errors import HttpError
+from apps.planning.tasks import create_subject_planning_in_background
 class StudyPlanService:
 
   def create_study_plan(self,user,subject_id,data):
     subject = SubjectService().get_subject_with_is_author(user,subject_id)
-    
-  def update_creating_planning_status(planning,**data):
+    create_subject_planning_in_background.delay(subject_id,data)
+  def update_creating_planning_status(self,planning,**data):
     StudyPlanRepo().update(planning,**data)
   
   def create_plan_items(self,plan,data):

@@ -1,188 +1,56 @@
-# AI Smart Study Planner – Project Plan
+﻿# Delivery Roadmap
 
-## Overview
+This roadmap is based on the current implementation, not a greenfield design.
 
-AI Smart Study Planner is a SaaS platform designed to help students organize study materials, generate study plans, practice quizzes, and analyze learning progress using AI assistance.
+## Already Implemented
 
-The platform combines modern backend architecture with AI-powered features to improve study efficiency and provide personalized learning insights.
+- Google-based login bootstrap
+- JWT creation and refresh logic
+- subject CRUD
+- subject file upload
+- AI subject analysis
+- AI study plan generation
+- AI quiz generation
+- quiz attempt submission
+- failed-task logging
 
-Primary goals of the system:
+## Highest-Priority Next Work
 
-- Organize subjects and study materials
-- Automatically generate study plans using AI
-- Generate quizzes from subject content
-- Track study sessions and performance
-- Provide analytics about learning progress
-- Identify weak areas based on quiz performance
+### Production readiness
 
----
+- move all settings and secrets to environment variables
+- rotate exposed secrets
+- configure static file handling for production
+- add structured logging and deployment secrets management
 
-# Technology Stack
+### Authentication hardening
 
-## Backend
+- set secure cookies server-side on login and refresh
+- add logout endpoint
+- align refresh and access handling with a consistent browser contract
 
-- Django 5
-- Django Ninja API
-- PostgreSQL
-- Redis
-- Celery (background tasks)
-- JWT Authentication (HttpOnly cookies)
+### Quiz reliability
 
-## Frontend
+- fix quiz generation status persistence
+- fix AI report task argument mismatch
+- reset `ai_report_creating` correctly on success
 
-- Next.js (App Router)
-- React
-- TanStack Query
-- Zustand (UI state)
+### API usability
 
-## AI Integration
+- include subject IDs in subject responses
+- return created plan and quiz identifiers from async create endpoints
+- standardize error responses
 
-- LLM API (OpenAI or compatible provider)
-- Prompt-based content generation
+### Quality
 
-## Infrastructure
+- add tests for planning flows
+- add tests for quiz generation and submission
+- add tests for permissions and failure modes
 
-- Docker
-- Redis
-- PostgreSQL
+## Nice-To-Have Follow-Up Work
 
----
-
-# Project Architecture Principles
-
-The project follows a layered architecture:
-
-API Layer → Services → Repositories → Database
-
-Responsibilities:
-
-API Layer
-
-- Request validation
-- Response formatting
-- Endpoint definitions
-
-Service Layer
-
-- Business logic
-- AI orchestration
-- Domain rules
-
-Repository Layer
-
-- Database access
-- Query abstraction
-
-Database
-
-- PostgreSQL relational schema
-
----
-
-# Development Phases
-
-## Phase 1 – Core MVP
-
-Authentication
-
-- Google OAuth login
-- JWT cookie-based authentication
-
-Subject Management
-
-- Create subject
-- Edit subject
-- Upload study files
-- Extract text from files
-
-Study Planning
-
-- AI-generated study plans
-- Plan items with topics and estimated hours
-
-Quiz System
-
-- Generate quizzes from subject topics
-- Track quiz attempts
-- Store quiz results
-
-Study Tracking
-
-- Study timer
-- Study session logs
-
-Analytics
-
-- Basic subject statistics
-- Quiz performance tracking
-
----
-
-## Phase 2 – Intelligence Layer
-
-Advanced Features:
-
-Mock Exams
-
-- Multi-topic quizzes
-- Time-limited exam simulations
-
-Weak Area Detection
-
-- AI analysis of quiz performance
-- Recommendations for improvement
-
-Advanced Statistics
-
-- Performance trends
-- Topic mastery insights
-
-AI Plan Adjustments
-
-- Update study plan based on progress
-
-Rate Limiting
-
-- Prevent excessive AI usage
-
----
-
-# Core Entities
-
-Users
-Subjects
-Subject Files
-Study Plans
-Plan Items
-Study Sessions
-Quizzes
-Quiz Questions
-Quiz Attempts
-
----
-
-# Future Improvements
-
-Potential features beyond MVP:
-
-- Collaboration between students
-- AI tutor chat
-- Vector search for study material
-- Mobile application
-- Study reminders
-- Gamification (streaks, achievements)
-
----
-
-# Project Goals
-
-The primary objective of this project is to demonstrate modern full-stack engineering skills including:
-
-- Clean backend architecture
-- AI integration
-- Modern API design
-- Data modeling
-- Performance-aware development
-- Production-ready authentication systems
-
-This project is designed to be portfolio-ready and resume-worthy.
+- admin workflows for reviewing failed tasks
+- analytics endpoints for dashboards
+- request correlation IDs for async jobs
+- rate limiting around AI endpoints
+- stronger API versioning strategy

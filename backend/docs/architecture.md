@@ -1,178 +1,139 @@
-# System Architecture
+﻿# System Architecture
 
-## High-Level Architecture
+## Overview
 
-The system follows a modular architecture separating responsibilities across layers.
+Mindorax Backend is a Django monolith with domain-separated apps and a thin API layer implemented through Django Ninja.
 
-Frontend
-↓
-API Layer (Django Ninja)
-↓
-Service Layer
-↓
-Repository Layer
-↓
-Database (PostgreSQL)
+```mermaid
+flowchart TD
+    Client[Frontend or API Client]
+    API[Django Ninja Routers]
+    MW[JWT Middleware]
+    Services[Service Layer]
+    Repos[Repository Layer]
+    DB[(PostgreSQL)]
+    Redis[(Redis)]
+    Celery[Celery Worker]
+    Gemini[Gemini API]
 
-Supporting services include Redis and Celery for caching and background tasks.
-
----
-
-# Backend Architecture
-
-The backend follows a domain-driven modular structure.
-
-```
-apps/
-  users
-  subjects
-  planning
-  quizzes
-
-services/
-repositories/
-schemas/
-tasks/
-utils/
+    Client --> API
+    API --> MW
+    MW --> Services
+    Services --> Repos
+    Repos --> DB
+    Services --> Celery
+    Celery --> Redis
+    Celery --> Gemini
+    Services --> Gemini
 ```
 
-Each layer has a specific responsibility.
+## Main Building Blocks
 
----
+### API layer
 
-# API Layer
+- Entry point: `core/api.py`
+- Framework: Django Ninja
+- Mounted under `/api/`
+- Organized by router:
+  - `/auth`
+  - `/subject`
+  - `/quiz`
+  - `/planning`
 
-Implemented using Django Ninja.
+### Middleware and auth
 
-Responsibilities:
+- `apps.middleware.JWTMiddleware` reads `access_token` from request cookies
+- authenticated routers use `IsAuthenticated`
+- permission enforcement is cookie-driven, not bearer-header driven in practice
 
-- HTTP request handling
-- Input validation
-- Response serialization
-- Authentication enforcement
+### Service layer
 
-Example endpoint categories:
+Services contain orchestration and business rules:
 
-- Authentication
-- Subjects
-- Study Plans
-- Quizzes
-- Analytics
+- `SubjectService`
+- `SubjectFileService`
+- `StudyPlanService`
+- `QuizService`
+- `GoogleAuthService`
+- `TokenService`
 
----
+### Repository layer
 
-# Service Layer
+Repositories wrap common model operations and normalize `DateTimeField` payloads through `BaseRepository`.
 
-Services contain the core business logic.
+### Async processing
 
-Examples:
+Celery tasks are used for:
 
-- SubjectService
-- StudyPlanService
-- QuizGenerationService
-- AIService
+- subject analysis
+- study plan generation
+- quiz generation
+- quiz report generation
 
-Responsibilities:
+Failed tasks are logged to the database through `FailedTaskAlert`.
 
-- Orchestrating domain logic
-- AI prompt management
-- Data transformation
-- Validation rules
+## App-by-App Responsibilities
 
----
+### Users
 
-# Repository Layer
+- Google token verification
+- JWT generation and refresh
+- custom email-based user model
 
-Repositories isolate database interactions.
+### Subjects
 
-Responsibilities:
+- subject CRUD
+- subject file upload and metadata
+- AI analysis of subject content and files
 
-- Query abstraction
-- Complex filtering
-- Data persistence
+### Planning
 
-This separation prevents business logic from being mixed with database access.
+- AI study plan creation
+- plan item persistence
+- study session completion tracking
 
----
+### Quizzes
 
-# AI Integration Layer
+- AI quiz generation
+- question and option persistence
+- quiz attempt submission
+- AI performance reporting
 
-AI is used for:
+### Logs
 
-- Study plan generation
-- Quiz generation
-- Performance analysis
+- failed Celery task persistence for operational review
 
-AI services operate using structured prompts and return structured JSON responses.
+## Request Lifecycle
 
-AI does not store state; the database is the system’s source of truth.
+### Authenticated request flow
 
----
+1. Client sends request with `access_token` cookie.
+2. `JWTMiddleware` verifies the JWT and attaches `request.user`.
+3. Django Ninja router validates input.
+4. Controller delegates to a service.
+5. Service uses repositories and models.
+6. Response schema serializes output.
 
-# Background Processing
+### Async generation flow
 
-Celery is used for asynchronous tasks such as:
+1. API endpoint validates the request.
+2. Service enqueues a Celery task.
+3. Task loads the domain objects from PostgreSQL.
+4. Task calls Gemini with structured prompts.
+5. Parsed AI response is stored in PostgreSQL.
+6. Frontend polls resource endpoints for completion.
 
-- File text extraction
-- AI summary generation
-- Analytics recalculation
+## Runtime Dependencies
 
-Redis acts as the message broker.
+- PostgreSQL for persistent data
+- Redis for cache and Celery broker
+- Celery worker for background processing
+- Gemini API for AI generation
+- Google auth libraries for OAuth token verification
 
----
+## Current Architectural Constraints
 
-# Caching
-
-Redis is used for:
-
-- Frequently accessed subject data
-- Dashboard statistics
-- AI generation caching
-
----
-
-# Authentication Flow
-
-The system uses JWT tokens stored in HttpOnly cookies.
-
-Authentication process:
-
-1. User logs in via Google OAuth
-2. Backend validates OAuth token
-3. Backend generates JWT tokens
-4. Tokens stored in HttpOnly cookies
-5. Middleware validates token on each request
-
----
-
-# Data Storage
-
-Primary database: PostgreSQL
-
-Reasons:
-
-- Strong relational integrity
-- JSON support
-- Indexing capabilities
-- Mature ecosystem
-
----
-
-# Security Principles
-
-- HttpOnly authentication cookies
-- Secure token expiration
-- Input validation using schemas
-- Strict API access control
-- Background processing isolation
-
----
-
-# Scalability Considerations
-
-The architecture supports scaling through:
-
-- Stateless APIs
-- Background task processing
-- Redis caching
-- Modular service design
+- Settings are not environment-driven yet.
+- Login does not set cookies directly.
+- Some async quiz status signals are not reliable yet.
+- Static file production handling is not fully documented in code because `STATIC_ROOT` is not configured.

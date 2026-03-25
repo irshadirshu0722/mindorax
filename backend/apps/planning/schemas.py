@@ -8,12 +8,22 @@ class StudyPlanCreate(Schema):
   starting_date: datetime
   description: str
 
+class StudyPlanSessionResponse(ModelSchema):
+
+  class Meta:
+    model = StudySession
+    fields = '__all__'
+
+
 class StudyPlanItemsResponse(ModelSchema):
+  plan_session:StudyPlanSessionResponse = None
   class Meta:
     model = PlanItems
     fields = '__all__'
+
 class StudyPlanResponse(ModelSchema):
   plan_items:list[StudyPlanItemsResponse]=[]
+  
   class Meta:
     model = StudyPlan
     fields = '__all__'
@@ -22,11 +32,7 @@ class StudyPlanListResponse(ModelSchema):
     model = StudyPlan
     fields = '__all__'
 
-class StudyPlanSessionResponse(ModelSchema):
 
-  class Meta:
-    model = StudySession
-    fields = '__all__'
 class StudyPlanSessionCreate(ModelSchema):
 
   class Meta:

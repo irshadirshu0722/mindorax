@@ -1,130 +1,82 @@
-# Authentication Feature
+﻿# Authentication
 
-## Overview
+## Current Implementation
 
-The system uses a modern authentication approach based on OAuth and JSON Web Tokens (JWT).
+The backend uses Google identity verification plus JWTs.
 
-Authentication is designed to be secure, scalable, and compatible with modern frontend frameworks.
+Flow today:
 
----
+1. Frontend obtains a Google `id_token`.
+2. Frontend sends that token to `POST /api/auth/google-login`.
+3. Backend verifies the Google token.
+4. Backend creates or finds a user.
+5. Backend returns `access_token` and `refresh_token` in the JSON response body.
+6. Later authenticated requests rely on an `access_token` cookie.
 
-# Authentication Strategy
+## Important Contract Detail
 
-The system uses:
+There is currently a split between login and request authentication:
 
-* Google OAuth for login
-* JWT tokens for session management
-* HttpOnly cookies for token storage
+- login returns tokens in JSON
+- middleware authenticates from cookies
 
-This approach combines the benefits of OAuth identity with stateless API authentication.
+This means your frontend must write the cookies after login if you want protected routes to work.
 
----
+## Login Request
 
-# Authentication Flow
+`POST /api/auth/google-login`
 
-Step 1 – User Login
+Request body:
 
-User selects “Login with Google”.
+```json
+{
+  "id_token": "google-id-token"
+}
+```
 
-The frontend redirects the user to the Google OAuth authorization page.
+Success response:
 
-Step 2 – OAuth Verification
+```json
+{
+  "access_token": "jwt-access-token",
+  "refresh_token": "jwt-refresh-token"
+}
+```
 
-After successful login, Google returns an authorization code.
+## Refresh Request
 
-The backend exchanges this code for a verified user identity.
+`GET /api/auth/refresh`
 
-Step 3 – User Creation
+Required cookie:
 
-If the user does not exist:
+- `refresh_token`
 
-* A new user record is created
-* User information is stored in the database
+Success response:
 
-Step 4 – Token Generation
+```json
+{
+  "access_token": "new-jwt-access-token"
+}
+```
 
-Two tokens are created:
+Failure response when cookie is missing:
 
-Access Token
+```json
+{
+  "error": "Refresh token missing"
+}
+```
 
-* Short-lived
-* Used for API authentication
+## Protected Routes
 
-Refresh Token
+Protected routers use the custom `IsAuthenticated` class, but the real auth source is the JWT middleware.
 
-* Long-lived
-* Used to issue new access tokens
+Required cookie:
 
-Step 5 – Cookie Storage
+- `access_token`
 
-Tokens are stored in secure HttpOnly cookies.
+## Security Notes
 
-This prevents access by client-side JavaScript and reduces XSS risk.
-
----
-
-# Token Lifecycle
-
-Access Token
-
-* Lifetime: ~30 minutes
-* Used for authenticating API requests
-
-Refresh Token
-
-* Lifetime: ~7 days
-* Used to obtain new access tokens
-
----
-
-# Authenticated Requests
-
-For each request:
-
-1. Browser automatically sends cookies
-2. Middleware reads the access token
-3. Token is verified
-4. User is attached to the request context
-
----
-
-# Logout Process
-
-Logout clears authentication cookies.
-
-The client becomes unauthenticated immediately.
-
----
-
-# Security Measures
-
-The authentication system includes several security practices:
-
-* HttpOnly cookies
-* Secure cookie flag
-* SameSite protection
-* Token expiration
-* Server-side verification
-* No tokens stored in local storage
-
----
-
-# API Endpoints
-
-Authentication endpoints include:
-
-POST /auth/google-login
-POST /auth/refresh
-POST /auth/logout
-GET /auth/me
-
----
-
-# Future Improvements
-
-Potential improvements include:
-
-* Token rotation
-* Token blacklist in Redis
-* Multi-provider OAuth
-* Device session management
+- The intended architecture is cookie-based.
+- The current implementation does not set `HttpOnly`, `Secure`, or `SameSite` cookie flags because cookies are not written by the backend yet.
+- Before production, the login and refresh flows should be converted to server-set secure cookies.

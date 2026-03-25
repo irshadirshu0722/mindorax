@@ -1,5 +1,5 @@
 
-from ninja import NinjaAPI
+from ninja import Router
 from .schemas import StudyPlanCreate,StudyPlanResponse,StudyPlanSessionCreate,StudyPlanSessionResponse
 from .services import StudyPlanService
 from apps.permissions import IsAuthenticated
@@ -10,11 +10,11 @@ from apps.permissions import IsAuthenticated
 4 - complete one task in a plan
 """
 
-router = NinjaAPI(auth=IsAuthenticated())
+router = Router(auth=IsAuthenticated())
 
-@router("/create/{subject_id}")
+@router.post("/create/{subject_id}")
 def create_study_plan(request,subject_id,data:StudyPlanCreate):
-  StudyPlanService().create_study_plan(request.user,subject_id,data)  
+  StudyPlanService().create_study_plan(request.user,subject_id,data.dict())  
   return {'message':"It's being created, it's take time, please come later"}
 
 @router.get('/all/{subject_id}',response=list[StudyPlanResponse])
@@ -27,5 +27,5 @@ def get_plan(request,plan_id):
 
 @router.post('/plan/complete/{plan_item_id}',response=StudyPlanSessionResponse)
 def complete_plan_item(request,plan_item_id,data:StudyPlanSessionCreate):
-  return StudyPlanService().create_study_plan_session(request.user,plan_item_id,data)
+  return StudyPlanService().create_study_plan_session(request.user,plan_item_id,data.dict())
 

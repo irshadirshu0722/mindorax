@@ -2,6 +2,7 @@ from ninja import NinjaAPI
 from apps.users.controller import router as user_router
 from apps.subjects.controller import router as subject_router
 from apps.quizzes.controller import router as quiz_router
+from apps.planning.controller import router as planning_router
 from ninja.errors import HttpError, ValidationError
 from django.http import Http404
 
@@ -13,6 +14,7 @@ api = NinjaAPI(
 api.add_router('/auth',user_router)
 api.add_router('/subject',subject_router)
 api.add_router('/quiz',quiz_router)
+api.add_router('/planning',planning_router)
 
 # @api.exception_handler(HttpError)
 # def handle_http_error(request, exc):

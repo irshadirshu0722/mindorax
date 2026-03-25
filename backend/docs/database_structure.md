@@ -1,235 +1,239 @@
-🔐 1. USERS
+﻿# Database Structure
 
-Your users table is fine but should include OAuth readiness.
+This document reflects the current Django models in the repository.
 
-users
------
-id (uuid, pk)
-email (unique, indexed)
-name
-avatar_url
-oauth_provider (google)
-oauth_id
-created_at
-updated_at
+## Entity Relationship Overview
 
-Indexes:
+```mermaid
+erDiagram
+    USER ||--o{ SUBJECT : owns
+    SUBJECT ||--o{ SUBJECT_FILE : has
+    SUBJECT ||--|| SUBJECT_ANALYZE : analyzed_as
+    SUBJECT ||--o{ STUDY_PLAN : plans
+    STUDY_PLAN ||--o{ PLAN_ITEM : contains
+    PLAN_ITEM ||--|| STUDY_SESSION : completed_by
+    SUBJECT ||--o{ QUIZ : has
+    QUIZ ||--o{ QUIZ_QUESTION : contains
+    QUIZ_QUESTION ||--o{ QUIZ_OPTION : has
+    QUIZ ||--o{ QUIZ_ATTEMPT : attempted_as
+    QUIZ_ATTEMPT ||--o{ QUIZ_ATTEMPT_ANSWER : stores
+    QUIZ_QUESTION ||--o{ QUIZ_ATTEMPT_ANSWER : answered_in
+    QUIZ_OPTION ||--o{ QUIZ_ATTEMPT_ANSWER : selected_as
+    USER ||--o{ FAILED_TASK_ALERT : resolves
+```
 
-INDEX(email)
+## Users
 
-Reason:
-Google OAuth login lookup.
+### `users_user`
 
-📚 2. SUBJECT DOMAIN
+Primary fields:
 
-This is the core entity.
+- `id`
+- `email`
+- `password`
+- `oauth_provider`
+- `oauth_id`
+- Django auth flags such as `is_staff` and `is_superuser`
+- `created_at`
+- `update_at`
 
-subjects
----------
-id (uuid, pk)
-user_id (fk -> users)
-title
-description
-scope_text
-deadline
-difficulty_level
-status (active, completed, archived)
+Notes:
 
-ai_summary (text)
-ai_topics (jsonb)
+- `username` is disabled
+- email is the login identifier
 
-created_at
-updated_at
+## Subjects
 
-Indexes:
+### `subjects_subject`
 
-INDEX(user_id)
-INDEX(status)
+Primary fields:
 
-Why ai_topics?
+- `id`
+- `user_id`
+- `title`
+- `description`
+- `goal`
+- `deadline`
+- `status`
+- `is_analyzing`
+- `is_failed_analyze`
+- `created_at`
+- `update_at`
 
-AI may extract:
+### `subjects_subjectfile`
 
-["arrays","linked list","trees"]
+Primary fields:
 
-Useful for quiz generation.
+- `id`
+- `subject_id`
+- `file`
+- `file_type`
+- `title`
+- `description`
+- `created_at`
+- `update_at`
 
-📂 3. SUBJECT FILES
+### `subjects_subjectanalyze`
 
-Your idea is correct.
+Primary fields:
 
-But we separate file storage and extraction.
+- `id`
+- `subject_id`
+- `difficulty_level`
+- `summary`
+- `topics`
+- `subtopics`
+- `concepts`
+- `topic_wise_priority`
+- `key_points`
+- `recommended_focus`
+- `estimated_hours`
+- `created_at`
+- `update_at`
 
-subject_files
---------------
-id
-subject_id (fk)
-file_url
-file_type
-uploaded_at
+Notes:
 
-Indexes:
+- this is a one-to-one record per subject
+- several AI-generated fields are stored as JSON
 
-INDEX(subject_id)
-📄 4. FILE EXTRACTION
+## Planning
 
-Your SubjectExtract becomes:
+### `planning_studyplan`
 
-subject_file_extractions
--------------------------
-id
-file_id (fk -> subject_files)
-raw_text
-processed_summary
-extracted_topics (jsonb)
-created_at
+Primary fields:
 
-Why?
+- `id`
+- `subject_id`
+- `ai_generated`
+- `total_hours`
+- `daily_study_hours`
+- `starting_date`
+- `end_date`
+- `is_completed`
+- `topics`
+- `description`
+- `is_creating`
+- `is_failed`
+- `created_at`
+- `update_at`
 
-raw_text → large text
+### `planning_planitems`
 
-processed_summary → condensed for AI
+Primary fields:
 
-extracted_topics → topic extraction
+- `id`
+- `plan_id`
+- `topic`
+- `description`
+- `estimated_hours`
+- `starting_date_time`
+- `end_date_time`
+- `created_at`
+- `update_at`
 
-AI will mostly use processed_summary.
+### `planning_studysession`
 
-📅 5. STUDY PLAN
+Primary fields:
 
-Your design was good but needs slight improvement.
+- `id`
+- `plan_item_id`
+- `start_date_time`
+- `end_date_time`
+- `duration`
+- `created_at`
+- `update_at`
 
-study_plans
-------------
-id
-subject_id (fk)
-ai_generated (boolean)
-total_hours
-daily_study_hours
-deadline
-plan_json (jsonb)
-created_at
+Notes:
 
-Example plan_json:
+- a study session is one-to-one with a plan item
+- `duration` is computed on save in minutes
 
-{
- "week1": ["arrays","linked list"],
- "week2": ["trees"]
-}
-📅 PLAN ITEMS
+## Quizzes
 
+### `quizzes_quiz`
 
-plan_items
------------
-id
-plan_id (fk)
-topic
-estimated_hours
-order_index
-status (pending, active, completed)
+Primary fields:
 
-Indexes:
+- `id`
+- `subject_id`
+- `topics`
+- `difficulty_level`
+- `total_questions`
+- `is_creating`
+- `is_failed`
+- `ai_report`
+- `ai_report_creating`
+- `created_at`
+- `update_at`
 
-INDEX(plan_id)
-⏱️ STUDY TIMER / ACTIVITY
+### `quizzes_quizquestion`
 
-Your PlanActivityLog becomes:
+Primary fields:
 
-study_sessions
----------------
-id
-user_id
-subject_id
-plan_item_id
-start_time
-end_time
-duration_minutes
-is_completed
-created_at
+- `id`
+- `quiz_id`
+- `question_text`
+- `explanation`
+- `difficulty`
+- `topic`
+- `question_type`
+- `created_at`
+- `update_at`
 
-Indexes:
+### `quizzes_quizquestionoption`
 
-INDEX(user_id)
+Primary fields:
 
-Used for analytics.
+- `id`
+- `question_id`
+- `text`
+- `is_correct`
+- `created_at`
+- `update_at`
 
-🧠 QUIZ DOMAIN
+### `quizzes_quizattempts`
 
-Your structure is good but missing attempts.
+Primary fields:
 
-Quiz
-quizzes
---------
-id
-subject_id
-topic
-difficulty
-total_questions
-created_by_ai (boolean)
-created_at
+- `id`
+- `quiz_id`
+- `score`
+- `total_score`
+- `time_taken`
+- `created_at`
+- `update_at`
 
-Indexes:
+### `quizzes_quizattemptanswer`
 
-INDEX(subject_id)
-INDEX(topic)
-Quiz Questions
-quiz_questions
----------------
-id
-quiz_id
-question_text
-explanation
-difficulty
-topic
-Question Options
-quiz_question_options
----------------------
-id
-question_id
-option_text
-is_correct
-📝 QUIZ ATTEMPTS (CRITICAL TABLE)
+Primary fields:
 
-You missed this but it's essential.
+- `id`
+- `attempt_id`
+- `question_id`
+- `selected_option_id`
+- `is_correct`
+- `created_at`
+- `update_at`
 
-quiz_attempts
---------------
-id
-user_id
-quiz_id
-score
-total_questions
-time_taken
-created_at
+## Operational Logging
 
-Indexes:
+### `logs_failedtaskalert`
 
-INDEX(user_id)
-INDEX(quiz_id)
-📝 QUESTION ATTEMPT
+Primary fields:
 
-Tracks weak areas.
+- `id`
+- `task_name`
+- `payload`
+- `error_message`
+- `traceback`
+- `status`
+- `created_at`
+- `resolved_at`
+- `resolved_by_id`
+- `notes`
 
-question_attempts
-------------------
-id
-attempt_id
-question_id
-selected_option_id
-is_correct
+## Practical Notes For Frontend Teams
 
-Now you can calculate weak topics.
-
-📊 SUBJECT ANALYTICS (OPTIONAL CACHE TABLE)
-
-For faster dashboard:
-
-subject_statistics
-------------------
-subject_id
-total_study_minutes
-quiz_attempts
-avg_quiz_score
-coverage_percentage
-last_updated
-
-This can be updated by background tasks.
+- Subject response objects do not currently expose subject IDs.
+- Planning and quiz resources are better suited for polling because the write endpoints are asynchronous.
+- JSON-backed fields such as `topics`, `subtopics`, and `concepts` should be treated as structured payloads rather than plain strings.

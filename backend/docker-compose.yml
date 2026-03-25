@@ -1,0 +1,99 @@
+services:
+  runtime:
+    image: alpine:3.21
+    command: ["sh", "-c", "trap : TERM INT; sleep infinity & wait"]
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: studyplanner
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: irshad1213
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    network_mode: "service:runtime"
+    depends_on:
+      - runtime
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d studyplanner"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis_data:/data
+    network_mode: "service:runtime"
+    depends_on:
+      - runtime
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["sh", "/app/docker/web.sh"]
+    environment:
+      DJANGO_SETTINGS_MODULE: core.settings
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      GUNICORN_WORKERS: "${GUNICORN_WORKERS:-3}"
+      GUNICORN_TIMEOUT: "${GUNICORN_TIMEOUT:-120}"
+    volumes:
+      - media_data:/app/media
+    network_mode: "service:runtime"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/docs').read()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["sh", "/app/docker/worker.sh"]
+    environment:
+      DJANGO_SETTINGS_MODULE: core.settings
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      CELERY_LOGLEVEL: "${CELERY_LOGLEVEL:-info}"
+      CELERY_CONCURRENCY: "${CELERY_CONCURRENCY:-2}"
+    volumes:
+      - media_data:/app/media
+    network_mode: "service:runtime"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_data:

@@ -20,12 +20,13 @@ def create_subject_planning_in_background(self, subject_id,data):
     from apps.planning.services  import StudyPlanService
     from apps.planning.repository import StudyPlanRepo
     subject = SubjectRepository().get(id=subject_id)
+    data['subject'] = subject
     planning = StudyPlanRepo().create(**data)
     plan_id = planning.id
     try:
         response = GeminiAPIService().run_study_plan_create(subject, planning)
         StudyPlanService().update_creating_planning_status(planning, is_creating=False, is_failed=False)
-        StudyPlanService().create_plan_items(subject,response)
+        StudyPlanService().create_plan_items(planning,response)
         logger.info("Plan created successfully | plan_id=%s",plan_id )
 
     except Exception as err:
