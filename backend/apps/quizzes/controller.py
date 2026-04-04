@@ -1,7 +1,8 @@
-from ninja import Router
+from ninja import Router,Query
 from apps.permissions import IsAuthenticated
 from .schemas import QuizCreate,QuizResponse,QuizAttemptCreate,ShortQuizResponse,QuizAttemptResponse
 from .services import QuizService
+from apps.utils import PaginationResponse
 router = Router(auth=IsAuthenticated())
 
 """
@@ -39,6 +40,6 @@ def request_ai_report(request,quiz_id):
 def create_quiz_attempt(request,quiz_id:int,data:QuizAttemptCreate):
   return QuizService().create_quiz_attempt(request.user,quiz_id,data.dict())
 
-@router.get("/all/{subject_id}",response=list[ShortQuizResponse])
-def get_all_quiz(request,subject_id):
-  return QuizService().get_all_quiz(request.user,subject_id)
+@router.get("/all/{subject_id}",response=PaginationResponse[ShortQuizResponse])
+def get_all_quiz(request,subject_id,page:int=Query(1),page_size:int=Query(20)):
+  return QuizService().get_all_quiz_by_pagination(request.user,subject_id,page,page_size)

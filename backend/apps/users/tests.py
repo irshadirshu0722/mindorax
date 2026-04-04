@@ -32,8 +32,20 @@ class GoogleAuthApiTest(TestCase):
                 "access_token": "access-token",
                 "refresh_token": "refresh-token",
             },
-        )
+        )   
 
         mock_login_or_create_user.assert_called_once_with("fake-google-id-token")
         mock_create_access_token.assert_called_once_with(1)
         mock_create_refresh_token.assert_called_once_with(1)
+
+    def test_refresh_token_missing_cookie(self,):
+        response = self.client.get('/api/auth/refresh')
+        assert response.status_code == 401
+        assert response.json()['error'] == "Refresh token missing"
+    
+    @patch("apps.users.services.TokenService.refresh_access_token")
+    def test_refresh_token_success(self,mock_refresh_access_token):
+        mock_refresh_access_token.return_value = "new_access_token"
+        response = self.client.get('/api/auth/refresh',HTTP_COOKIE="refresh_token=valid_token")
+        assert response.status_code == 200
+        assert response.json()["access_token"] == "new_access_token"

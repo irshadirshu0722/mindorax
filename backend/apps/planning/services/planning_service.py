@@ -3,7 +3,8 @@ from apps.planning.repository import StudySessionRepo,PlanItemRepo,StudyPlanRepo
 from apps.subjects.services import SubjectService
 from ninja.errors import HttpError
 from apps.planning.tasks import create_subject_planning_in_background
-class StudyPlanService:
+from apps.utils import BasePaginationService
+class StudyPlanService(BasePaginationService):
 
   def create_study_plan(self,user,subject_id,data):
     subject = SubjectService().get_subject_with_is_author(user,subject_id)
@@ -24,7 +25,10 @@ class StudyPlanService:
     subject = SubjectService().get_subject_with_is_author(user,subject_id)
 
     return subject.study_plans.all()
-  
+  def get_all_plan_with_pagination(self,user,subject_id,page,page_size):
+    subject = SubjectService().get_subject_with_is_author(user,subject_id)
+    items,count,has_next = StudyPlanRepo().filter_by_pagination(page,page_size,subject=subject)
+    return self._build_pagination_response(items,count,page,page_size,has_next)
   def get_plan_with_is_author(self,user,plan_id):
     try:
       plan = StudyPlanRepo().get(id=plan_id)

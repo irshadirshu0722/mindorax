@@ -6,7 +6,8 @@ from apps.subjects.repositories import SubjectRepository
 from apps.quizzes.tasks import create_quiz_in_background,create_ai_report_in_background
 from django.core.exceptions import ObjectDoesNotExist
 from ninja.errors import HttpError
-class QuizService:
+from apps.utils import BasePaginationService
+class QuizService(BasePaginationService):
   def __int__(self):
     self.quiz_repo = QuizRepo()
     self.quiz_attempt_repo = QuizAttemptRepo()
@@ -58,7 +59,6 @@ class QuizService:
       raise HttpError(status_code=500,message="Failed to submit quiz, Please try again later")
     return quiz_attempt
     
-
   def create_ai_report(self,user,quiz_id):
     quiz = self.get_quiz_by_is_author(user,quiz_id)
     create_ai_report_in_background.delay(quiz_id=quiz_id)
@@ -69,6 +69,10 @@ class QuizService:
     quizzes = QuizRepo().filter(subject=subject).all()
     return quizzes
 
+  def get_all_quiz_by_pagination(self,user,subject_id,page,page_size):
+    subject = SubjectRepository().get_with_is_author(user,id=subject_id)
+    quizzes,count,has_next = QuizRepo().filter_by_pagination(page,page_size,subject=subject)
+    return self._build_pagination_response(quizzes,count,page,page_size,has_next)
   def _attempt_data_to_dict(self,attempts):
     return {item['question_id']:item['option_id'] for item in attempts}
 

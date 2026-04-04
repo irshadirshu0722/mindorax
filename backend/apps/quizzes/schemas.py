@@ -40,7 +40,10 @@ class QuizAttemptResponse(ModelSchema):
     fields = "__all__"
 
 class ShortQuizResponse(ModelSchema):
-  attempts : list[QuizAttemptResponse] = []
+  attempted: bool = False
   class Meta:
     model = Quiz
     fields = '__all__'
+  @staticmethod
+  def resolve_attempted(obj, context):
+      return obj.attempts.count() > 0

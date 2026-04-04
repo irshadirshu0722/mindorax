@@ -3,8 +3,9 @@ from ..repositories import SubjectRepository,SubjectAnalyzeRepository
 from django.core.exceptions import ObjectDoesNotExist
 from ninja.errors import HttpError
 from apps.gemini import GeminiAPIService
+from apps.utils import BasePaginationService
 
-class SubjectService:
+class SubjectService(BasePaginationService):
   def create_subject(self,user,data):
     data['user'] = user
     print(data)
@@ -47,4 +48,8 @@ class SubjectService:
     if not subject.files.all():
       raise HttpError(message="You must upload at least one file to analyze your subject",status_code=400)
     analyze_subject_in_background.delay(subject_id)
-    
+  
+
+  def get_all_subject_by_pagination(self,user,page=1,page_size=20):
+    subjects,count,has_next = SubjectRepository().filter_by_pagination(page=page,page_size=page_size,user=user)
+    return self._build_pagination_response(subjects,count,page,page_size,has_next)

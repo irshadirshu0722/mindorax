@@ -5,7 +5,6 @@ from apps.quizzes.controller import router as quiz_router
 from apps.planning.controller import router as planning_router
 from ninja.errors import HttpError, ValidationError
 from django.http import Http404
-
 api = NinjaAPI(
     title="AI Study Planner API",
     version="1.0.0"
@@ -16,21 +15,21 @@ api.add_router('/subject',subject_router)
 api.add_router('/quiz',quiz_router)
 api.add_router('/planning',planning_router)
 
-# @api.exception_handler(HttpError)
-# def handle_http_error(request, exc):
-#     return api.create_response(request, {"message": exc.message}, status=exc.status_code)
-# @api.exception_handler(ValidationError)
-# def handle_validation_error(request, exc):
-#     return api.create_response(
-#         request,
-#         {"message": "Validation error", "errors": exc.errors},
-#         status=422,
-#     )
+@api.exception_handler(HttpError)
+def handle_http_error(request, exc):
+    return api.create_response(request, {"message": exc.message}, status=exc.status_code)
+@api.exception_handler(ValidationError)
+def handle_validation_error(request, exc):
+    return api.create_response(
+        request,
+        {"message": "Validation error", "errors": exc.errors},
+        status=422,
+    )
 
-# @api.exception_handler(Http404)
-# def handle_404(request, exc):
-#     return api.create_response(request, {"message": "Not found"}, status=404)
+@api.exception_handler(Http404)
+def handle_404(request, exc):
+    return api.create_response(request, {"message": "Not found"}, status=404)
 
-# @api.exception_handler(Exception)
-# def handle_unexpected_error(request, exc):
-#     return api.create_response(request, {"message": str(exc)}, status=500)
+@api.exception_handler(Exception)
+def handle_unexpected_error(request, exc):
+    return api.create_response(request, {"message": str(exc)}, status=500)

@@ -27,6 +27,11 @@ class StudyPlanResponse(ModelSchema):
   class Meta:
     model = StudyPlan
     fields = '__all__'
+  
+class StudyPlanShortResponse(ModelSchema):
+  class Meta:
+    model = StudyPlan
+    fields = '__all__'
 class StudyPlanListResponse(ModelSchema):
   class Meta:
     model = StudyPlan

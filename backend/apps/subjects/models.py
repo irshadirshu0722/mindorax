@@ -21,7 +21,6 @@ class Subject(CreateUpdateAt):
   is_failed_analyze =  models.BooleanField(default=False)
   status =  models.CharField(choices=STATUS_CHOICES,default='active')
 
-
 class SubjectFile(CreateUpdateAt):
   FILE_TYPE = [
     ('pdf','PDF'),

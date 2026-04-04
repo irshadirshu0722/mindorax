@@ -3,7 +3,9 @@ from ninja.errors import HttpError
 from datetime import datetime
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-
+from typing import List, TypeVar, Generic
+from ninja import Schema
+T = TypeVar("T")
 class CreateUpdateAt(models.Model):
   """
   Reusable create and update field for every models
@@ -13,8 +15,6 @@ class CreateUpdateAt(models.Model):
 
   class Meta:
     abstract = True
-
-
 
 class BaseRepository:
     def __init__(self, model):
@@ -49,6 +49,13 @@ class BaseRepository:
 
         return normalized
 
+    def filter_by_pagination(self,page,page_size,**filter):
+        offset = (page - 1) * page_size
+        filtered = self.filter(**filter)
+        count = filtered.count()
+        has_next = count <  offset+page_size 
+        return filtered.all()[offset: offset+page_size],count,has_next
+
     def create(self, **data):
         data = self._normalize_datetime_fields(data)
         return self.model.objects.create(**data)
@@ -61,6 +68,7 @@ class BaseRepository:
 
     def update(self, instance, **data):
         data = self._normalize_datetime_fields(data)
+        print(data)
         for key, value in data.items():
             setattr(instance, key, value)
         instance.save()
@@ -74,6 +82,21 @@ class BaseRepository:
         if instance.user != user:
             raise HttpError(status_code=403, message="You are not allowed to view this item")
         return instance
+
+class BasePaginationService:
+    def _build_pagination_response(self,items,count,page,page_size,has_next):
+        return {
+            'next': f"?page={page + 1}&page_size={page_size}" if has_next else None,
+            'prev': f"?page={page - 1}&page_size={page_size}" if page > 1 else None,
+            'items': items,
+            'count': count
+        }
+
+class PaginationResponse(Schema,Generic[T]):
+    next: str | None
+    prev: str | None
+    items : List[T]
+    count: int
 
 DIFFICULTY_LEVEL_CHOICES = [
     ('low','LOW'),

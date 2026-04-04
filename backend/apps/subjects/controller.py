@@ -1,9 +1,9 @@
-from ninja import Router,File,Path,Form
+from ninja import Router,File,Path,Form,Query
 from ninja.files import UploadedFile
-from .schemas import SubjectCreate,SubjectAnalyzeResponse,SubjectFileCreate,SubjectFileResponse,SubjectResponse
+from .schemas import SubjectCreate,SubjectAnalyzeResponse,SubjectFileCreate,SubjectFileResponse,SubjectResponse,SubjectUpdate
 from .services import SubjectService,SubjectFileService
 from apps.permissions import IsAuthenticated
-
+from apps.utils import PaginationResponse
 router = Router(auth=IsAuthenticated(),)
 # Create subject without filles
 @router.post('/create',response=SubjectResponse)
@@ -15,16 +15,17 @@ def create_subject(request, data: SubjectCreate):
 def get_subject(request,subject_id:int):
   return SubjectService().get_subject(request.user,subject_id)
 
+@router.get('get/all',response=PaginationResponse[SubjectResponse])
+def get_all_subject(request,page:int=Query(1),page_size:int=Query(20)):
+  return SubjectService().get_all_subject_by_pagination(request.user,page,page_size)
 @router.delete('/delete/{subject_id}')
 def delete_subject(request,subject_id):
   SubjectService().delete_subject(request.user,subject_id)
   return {'message':'Successfully deleted the subject'}
 
 @router.put('/update/{subject_id}',response=SubjectResponse)
-def update_subject(request,subject_id,data:SubjectCreate):
-  return SubjectService().update_subject(request.user,subject_id,data.model_dump())
-
-
+def update_subject(request,subject_id,data:SubjectUpdate):
+  return SubjectService().update_subject(request.user,subject_id,data.model_dump(exclude_unset=True))
 
 
 # Subject File management

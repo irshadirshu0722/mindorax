@@ -2,6 +2,10 @@ from ninja import Schema,ModelSchema
 from datetime import datetime
 from enum import Enum
 from .models import Subject,SubjectFile,SubjectAnalyze
+from typing import List, TypeVar, Generic
+T = TypeVar("T")
+
+
 class DifficultyLevel(str, Enum):
     low = "low"
     medium = "medium"
@@ -38,6 +42,13 @@ class SubjectCreate(ModelSchema):
         fields = [
             'title','description','goal','deadline','status'
         ]
+class SubjectUpdate(ModelSchema):
+    class Meta:
+        model = Subject
+        fields = [
+            'title','description','goal','deadline','status'
+        ]
+        fields_optional = "__all__"
 
 
 class SubjectResponse(ModelSchema):
@@ -46,7 +57,7 @@ class SubjectResponse(ModelSchema):
     class Meta:
         model = Subject
         fields = [
-            'title','description','goal','deadline','status'
+            'title','description','goal','deadline','status','id'
         ]
 
 
@@ -55,4 +66,4 @@ class SubjectFileCreate(ModelSchema):
     class Meta:
         model = SubjectFile
         fields = ['title','description']
-        
+    
